@@ -31,10 +31,10 @@ jobs:
     with:
       examples: |
         [
-          { "example": "examples/istiods/minimal.yaml" },
-          { "example": "examples/istiods/standard.yaml" }
+          { "example": "examples/istios/minimal.yaml" },
+          { "example": "examples/istios/standard.yaml" }
         ]
-      api_path: apis/istiods
+      api_path: apis/istios
       error_on_missing_schemas: true
 
   test:
