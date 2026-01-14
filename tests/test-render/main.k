@@ -1,8 +1,9 @@
+import models.ai.com.ops.hops.helm.v1alpha1 as helmv1alpha1
 import models.io.upbound.dev.meta.v1alpha1 as metav1alpha1
 import models.k8s.apimachinery.pkg.apis.meta.v1 as metav1
 
 # ==============================================================================
-# Unit tests for Istio XRD
+# Unit tests for Istiod XRD
 #
 # Philosophy: Test YOUR API, not the provider's API.
 # - render/validate already checks provider schema correctness
@@ -16,23 +17,19 @@ _items = [
     metav1alpha1.CompositionTest {
         metadata.name = "minimal-renders-helm-release"
         spec = {
-            compositionPath = "apis/istios/composition.yaml"
-            xrdPath = "apis/istios/definition.yaml"
+            compositionPath = "apis/istiods/composition.yaml"
+            xrdPath = "apis/istiods/definition.yaml"
             timeoutSeconds = 60
             validate = False
-            xr = {
-                apiVersion = "helm.hops.ops.com.ai/v1alpha1"
-                kind = "Istio"
-                metadata.name = "test-istio"
-                spec = {
-                    clusterName = "test-cluster"
-                }
+            xr = helmv1alpha1.Istiod {
+                metadata.name = "test-istiod"
+                spec.clusterName = "test-cluster"
             }
             assertResources = [
                 {
                     apiVersion = "helm.m.crossplane.io/v1beta1"
                     kind = "Release"
-                    metadata.name = "test-istio"
+                    metadata.name = "test-istiod"
                 }
             ]
         }
@@ -44,20 +41,16 @@ _items = [
     metav1alpha1.CompositionTest {
         metadata.name = "custom-labels-merged-with-defaults"
         spec = {
-            compositionPath = "apis/istios/composition.yaml"
-            xrdPath = "apis/istios/definition.yaml"
+            compositionPath = "apis/istiods/composition.yaml"
+            xrdPath = "apis/istiods/definition.yaml"
             timeoutSeconds = 60
             validate = False
-            xr = {
-                apiVersion = "helm.hops.ops.com.ai/v1alpha1"
-                kind = "Istio"
-                metadata.name = "labeled-istio"
+            xr = helmv1alpha1.Istiod {
+                metadata.name = "labeled-istiod"
                 spec = {
                     clusterName = "test-cluster"
-                    labels = {
-                        team = "platform"
-                        environment = "staging"
-                    }
+                    # labels uses x-kubernetes-preserve-unknown-fields, use untyped
+                    labels = {team = "platform", environment = "staging"}
                 }
             }
             assertResources = [
@@ -65,10 +58,10 @@ _items = [
                     apiVersion = "helm.m.crossplane.io/v1beta1"
                     kind = "Release"
                     metadata = {
-                        name = "labeled-istio"
+                        name = "labeled-istiod"
                         labels = {
                             "hops.ops.com.ai/managed" = "true"
-                            "hops.ops.com.ai/istio" = "labeled-istio"
+                            "hops.ops.com.ai/istiod" = "labeled-istiod"
                             team = "platform"
                             environment = "staging"
                         }
@@ -80,24 +73,20 @@ _items = [
 
     # ==========================================================================
     # Test 3: overrideAllValues replaces defaults
+    # Note: overrideAllValues uses x-kubernetes-preserve-unknown-fields
     # ==========================================================================
     metav1alpha1.CompositionTest {
         metadata.name = "override-all-values"
         spec = {
-            compositionPath = "apis/istios/composition.yaml"
-            xrdPath = "apis/istios/definition.yaml"
+            compositionPath = "apis/istiods/composition.yaml"
+            xrdPath = "apis/istiods/definition.yaml"
             timeoutSeconds = 60
             validate = False
-            xr = {
-                apiVersion = "helm.hops.ops.com.ai/v1alpha1"
-                kind = "Istio"
+            xr = helmv1alpha1.Istiod {
                 metadata.name = "override-test"
                 spec = {
                     clusterName = "my-cluster"
-                    overrideAllValues = {
-                        fullnameOverride = "custom-istiod"
-                        pilot.enabled = True
-                    }
+                    overrideAllValues = {fullnameOverride = "custom-istiod", pilot = {enabled = True}}
                 }
             }
             assertResources = [
@@ -107,7 +96,7 @@ _items = [
                     metadata.name = "override-test"
                     spec.forProvider.values = {
                         fullnameOverride = "custom-istiod"
-                        pilot.enabled = True
+                        pilot = {enabled = True}
                     }
                 }
             ]

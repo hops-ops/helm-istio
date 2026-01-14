@@ -1,10 +1,10 @@
 apiVersion: meta.pkg.crossplane.io/v1alpha1
 kind: Configuration
 metadata:
-  name: helm-istio
+  name: helm-istiod
   annotations:
     meta.crossplane.io/maintainer: Patrick Lee Scott
-    meta.crossplane.io/source: github.com/hops-ops/helm-istio
+    meta.crossplane.io/source: github.com/hops-ops/helm-istiod
     meta.crossplane.io/description: Installs the istiod Helm chart with a minimal, stable interface.
 spec:
   dependsOn:

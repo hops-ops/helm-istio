@@ -1,16 +1,16 @@
-# helm-istio
+# helm-istiod
 
 A Crossplane Configuration package that installs the istiod Helm chart with a minimal, stable interface.
 
 ## Overview
 
-`helm-istio` renders a single Helm release for istiod (Istio control plane). It exposes only the inputs needed
+`helm-istiod` renders a single Helm release for istiod (Istio control plane). It exposes only the inputs needed
 for chart values, namespace, and release name, keeping the interface stable while allowing full Helm overrides.
 
 ## Features
 
 - **Minimal Helm interface**: values and overrideAllValues with stable defaults
-- **Predictable naming**: defaults to `<clusterName>-istio` in the `istio-system` namespace
+- **Predictable naming**: defaults to `<clusterName>-istiod` in the `istio-system` namespace
 - **GitOps friendly**: ships a `.gitops/` deploy chart
 
 ## Prerequisites
@@ -27,16 +27,16 @@ for chart values, namespace, and release name, keeping the interface stable whil
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
-  name: helm-istio
+  name: helm-istiod
 spec:
-  package: ghcr.io/hops-ops/helm-istio:latest
+  package: ghcr.io/hops-ops/helm-istiod:latest
 ```
 
 ```yaml
 apiVersion: helm.hops.ops.com.ai/v1alpha1
-kind: Istio
+kind: Istiod
 metadata:
-  name: istio
+  name: istiod
   namespace: example-env
 spec:
   clusterName: example-cluster

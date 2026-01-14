@@ -1,12 +1,12 @@
 apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: istios.helm.hops.ops.com.ai
+  name: istiods.helm.hops.ops.com.ai
 spec:
   group: helm.hops.ops.com.ai
   names:
-    kind: Istio
-    plural: istios
+    kind: Istiod
+    plural: istiods
   scope: Namespaced
   versions:
   - name: v1alpha1
@@ -14,11 +14,11 @@ spec:
     served: true
     schema:
       openAPIV3Schema:
-        description: Istio installs the istiod Helm chart.
+        description: Istiod installs the istiod Helm chart.
         type: object
         properties:
           spec:
-            description: IstioSpec defines the desired state of Istio.
+            description: IstiodSpec defines the desired state of Istiod.
             type: object
             properties:
               clusterName:
@@ -32,7 +32,7 @@ spec:
                 default:
                 - "*"
               labels:
-                description: Custom labels applied to all managed resources. Merged with default labels (hops.ops.com.ai/managed, hops.ops.com.ai/istio).
+                description: Custom labels applied to all managed resources. Merged with default labels (hops.ops.com.ai/managed, hops.ops.com.ai/istiod).
                 type: object
                 additionalProperties:
                   type: string
@@ -65,11 +65,11 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
           status:
-            description: IstioStatus defines the observed state of Istio.
+            description: IstiodStatus defines the observed state of Istiod.
             type: object
             properties:
               ready:
-                description: Overall readiness of the Istio installation.
+                description: Overall readiness of the Istiod installation.
                 type: boolean
               release:
                 description: Status of the Helm release.

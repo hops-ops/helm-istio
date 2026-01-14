@@ -13,7 +13,7 @@
 # ==============================================================================
 
 # Core identification
-{{- $name := $metadata.name | default "istio" }}
+{{- $name := $metadata.name | default "istiod" }}
 {{- $clusterName := $spec.clusterName | default $name }}
 {{- $managementPolicies := $spec.managementPolicies | default (list "*") }}
 
@@ -58,5 +58,5 @@
     )
   )
   "observed" (dict)
-  "istio" (dict)
+  "istiod" (dict)
 }}

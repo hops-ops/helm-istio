@@ -1,7 +1,7 @@
 apiVersion: meta.dev.upbound.io/v2alpha1
 kind: Project
 metadata:
-  name: helm-istio
+  name: helm-istiod
 spec:
   dependsOn:
   - apiVersion: pkg.crossplane.io/v1
@@ -16,8 +16,8 @@ spec:
   license: Apache-2.0
   maintainer: Patrick Lee Scott <pat@patscott.io>
   readme: |
-    # helm-istio
+    # helm-istiod
 
     Installs the istiod Helm chart using Crossplane and the Helm provider.
-  repository: ghcr.io/hops-ops/helm-istio
-  source: github.com/hops-ops/helm-istio
+  repository: ghcr.io/hops-ops/helm-istiod
+  source: github.com/hops-ops/helm-istiod

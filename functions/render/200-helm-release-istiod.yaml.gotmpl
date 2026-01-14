@@ -2,8 +2,13 @@
 #
 # Helm release for istiod
 #
+# Integration defaults:
+# - Prometheus metrics enabled for service mesh observability
+# - Integrates with Kiali for visualization
+# - Tracing configured for Tempo (OTLP)
+#
 
-{{- $ist := $state.istio }}
+{{- $ist := $state.istiod }}
 
 ---
 apiVersion: helm.m.crossplane.io/v1beta1
@@ -28,6 +33,28 @@ spec:
     values:
       fullnameOverride: istiod
       nameOverride: istiod
+      # Mesh configuration for observability integration
+      meshConfig:
+        # Enable access logging for debugging
+        accessLogFile: /dev/stdout
+        # Prometheus metrics
+        enablePrometheusMerge: true
+        # Distributed tracing to Tempo via OTLP
+        defaultConfig:
+          tracing:
+            sampling: 100
+            zipkin:
+              address: tempo.monitoring:9411
+        # Extension providers for telemetry
+        extensionProviders:
+          - name: otel-tracing
+            opentelemetry:
+              service: tempo.monitoring
+              port: 4317
+      # Pilot metrics
+      pilot:
+        env:
+          PILOT_ENABLE_METADATA_EXCHANGE: "true"
       {{- if $ist.values }}
       {{- toYaml $ist.values | nindent 6 }}
       {{- end }}

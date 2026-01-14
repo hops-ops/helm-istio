@@ -1,15 +1,15 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: istios.helm.hops.ops.com.ai
+  name: istiods.helm.hops.ops.com.ai
 spec:
   compositeTypeRef:
     apiVersion: helm.hops.ops.com.ai/v1alpha1
-    kind: Istio
+    kind: Istiod
   mode: Pipeline
   pipeline:
   - functionRef:
-      name: hops-ops-helm-istiorender
+      name: hops-ops-helm-istiodrender
     step: render
   - functionRef:
       name: crossplane-contrib-function-auto-ready

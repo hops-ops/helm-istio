@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 
-PACKAGE ?= helm-istio
-XRD_DIR := apis/istios
+PACKAGE ?= helm-istiod
+XRD_DIR := apis/istiods
 COMPOSITION := $(XRD_DIR)/composition.yaml
 DEFINITION := $(XRD_DIR)/definition.yaml
-EXAMPLE_DEFAULT := examples/istios/standard.yaml
+EXAMPLE_DEFAULT := examples/istiods/standard.yaml
 RENDER_TESTS := $(wildcard tests/test-*)
 E2E_TESTS := $(wildcard tests/e2etest-*)
 
@@ -18,8 +18,8 @@ build:
 # Examples list - mirrors GitHub Actions workflow
 # Format: example_path::observed_resources_path (observed_resources_path is optional)
 EXAMPLES := \
-    examples/istios/minimal.yaml:: \
-    examples/istios/standard.yaml::
+    examples/istiods/minimal.yaml:: \
+    examples/istiods/standard.yaml::
 
 # Render all examples (parallel execution, output shown per-job when complete)
 render\:all:
@@ -92,11 +92,11 @@ validate: ; @$(MAKE) 'validate:all'
 
 # Single example targets
 render\:%:
-	@example="examples/istios/$*.yaml"; \
+	@example="examples/istiods/$*.yaml"; \
 	up composition render --xrd=$(DEFINITION) $(COMPOSITION) $$example
 
 validate\:%:
-	@example="examples/istios/$*.yaml"; \
+	@example="examples/istiods/$*.yaml"; \
 	up composition render --xrd=$(DEFINITION) $(COMPOSITION) $$example \
 		--include-full-xr --quiet | \
 		crossplane beta validate $(XRD_DIR) --error-on-missing-schemas -
