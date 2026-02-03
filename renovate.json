@@ -98,7 +98,7 @@
       "customType": "regex",
       "fileMatch": ["\\.gitops/deploy/Chart\\.yaml$"],
       "matchStrings": ["appVersion:\\s+(?<currentValue>.*)"],
-      "depNameTemplate": "istiod",
+      "depNameTemplate": "base",
       "registryUrlTemplate": "https://istio-release.storage.googleapis.com/charts",
       "datasourceTemplate": "helm"
     }

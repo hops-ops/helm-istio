@@ -1,0 +1,52 @@
+# code: language=yaml
+#
+# ServiceEntry resources for egress allowedHosts
+# Created via provider-kubernetes Object (one per allowed host)
+#
+# When spec.egress.allowedHosts is set, istiod is configured with
+# outboundTrafficPolicy.mode: REGISTRY_ONLY. These ServiceEntries
+# explicitly allow HTTPS traffic to each listed host.
+#
+
+{{- $ist := $state.istio }}
+
+{{- range $host := $ist.egress.allowedHosts }}
+
+{{- $sanitized := $host | replace "*." "wildcard-" | replace "." "-" }}
+{{- $resolution := "DNS" }}
+{{- if hasPrefix "*" $host }}
+  {{- $resolution = "NONE" }}
+{{- end }}
+
+---
+apiVersion: kubernetes.crossplane.io/v1alpha2
+kind: Object
+metadata:
+  name: {{ $ist.name }}-egress-{{ $sanitized }}
+  annotations:
+    {{ setResourceNameAnnotation (printf "egress-service-entry-%s" $sanitized) }}
+  labels: {{ $ist.labels | toJson }}
+spec:
+  managementPolicies: {{ $ist.managementPolicies | toJson }}
+  forProvider:
+    manifest:
+      apiVersion: networking.istio.io/v1
+      kind: ServiceEntry
+      metadata:
+        name: allow-{{ $sanitized }}
+        namespace: {{ $ist.namespace }}
+      spec:
+        hosts:
+        - {{ $host | quote }}
+        location: MESH_EXTERNAL
+        ports:
+        - number: 443
+          name: https
+          protocol: HTTPS
+        resolution: {{ $resolution }}
+        exportTo:
+        - "*"
+  providerConfigRef:
+    name: {{ $ist.providerConfigRef.name }}
+
+{{- end }}

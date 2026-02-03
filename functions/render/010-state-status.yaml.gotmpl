@@ -3,22 +3,32 @@
 # Compute status values from observed state
 #
 
-{{- $ist := $state.istiod }}
 {{- $obs := $state.observed }}
 
 # ==============================================================================
-# Compute status output
+# Compute per-component readiness
 # ==============================================================================
 
-# Determine overall ready state from observed Helm release
-{{- $helmReady := $obs.helmRelease.ready | default false }}
-{{- $ready := $helmReady }}
+{{- $baseReady := $obs.base.ready | default false }}
+{{- $istiodReady := $obs.istiod.ready | default false }}
+
+# Gateway readiness
+{{- $gatewayStatuses := list }}
+{{- $allGatewaysReady := true }}
+{{- range $gw := ($obs.gateways | default list) }}
+  {{- $gwReady := $gw.ready | default false }}
+  {{- if not $gwReady }}
+    {{- $allGatewaysReady = false }}
+  {{- end }}
+  {{- $gatewayStatuses = append $gatewayStatuses (dict "name" $gw.name "ready" $gwReady) }}
+{{- end }}
+
+# Overall readiness: all components must be ready
+{{- $ready := and $baseReady $istiodReady $allGatewaysReady }}
 
 {{- $state = set $state "status" (dict
   "ready" $ready
-  "release" (dict
-    "name" $ist.releaseName
-    "namespace" $ist.namespace
-    "ready" $helmReady
-  )
+  "base" (dict "ready" $baseReady)
+  "istiod" (dict "ready" $istiodReady)
+  "gateways" $gatewayStatuses
 ) }}

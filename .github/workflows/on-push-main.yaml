@@ -27,10 +27,11 @@ jobs:
     with:
       examples: |
         [
-          { "example": "examples/istiods/minimal.yaml" },
-          { "example": "examples/istiods/standard.yaml" }
+          { "example": "examples/istiostacks/minimal.yaml" },
+          { "example": "examples/istiostacks/standard.yaml" },
+          { "example": "examples/istiostacks/ha.yaml" }
         ]
-      api_path: apis/istiods
+      api_path: apis/istiostacks
       error_on_missing_schemas: true
 
   test:

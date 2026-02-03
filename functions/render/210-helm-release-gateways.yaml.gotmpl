@@ -1,0 +1,81 @@
+# code: language=yaml
+#
+# Helm releases for Istio gateways (dynamic, one per gateway entry)
+#
+
+{{- $ist := $state.istio }}
+{{- $obs := $state.observed }}
+
+{{- range $gw := $ist.gateways }}
+
+---
+apiVersion: helm.m.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: {{ $ist.name }}-{{ $gw.name }}
+  annotations:
+    {{ setResourceNameAnnotation (printf "helm-release-gateway-%s" $gw.name) }}
+  labels: {{ $ist.labels | toJson }}
+spec:
+  managementPolicies: {{ $ist.managementPolicies | toJson }}
+  forProvider:
+    chart:
+      name: gateway
+      repository: https://istio-release.storage.googleapis.com/charts
+      version: 1.28.2
+    namespace: {{ $ist.namespace }}
+    {{- if $gw.overrideAllValues }}
+    values:
+      {{- toYaml $gw.overrideAllValues | nindent 6 }}
+    {{- else }}
+    values:
+      fullnameOverride: {{ $gw.name }}
+      nameOverride: {{ $gw.name }}
+      service:
+        type: {{ $gw.type }}
+        {{- if $gw.ports }}
+        ports:
+          {{- toYaml $gw.ports | nindent 10 }}
+        {{- end }}
+      {{- if $gw.values }}
+      {{- toYaml $gw.values | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  rollbackLimit: 3
+  providerConfigRef:
+    name: {{ $ist.providerConfigRef.name }}
+    kind: {{ $ist.providerConfigRef.kind }}
+
+# ==============================================================================
+# Usage: delete gateway before istiod (deletion protection)
+# Only emit when both resources are observed as ready
+# ==============================================================================
+{{- $gwObsReady := false }}
+{{- range $obsGw := ($obs.gateways | default list) }}
+  {{- if eq $obsGw.name $gw.name }}
+    {{- $gwObsReady = $obsGw.ready | default false }}
+  {{- end }}
+{{- end }}
+{{- if and ($obs.istiod.ready | default false) $gwObsReady }}
+---
+apiVersion: protection.crossplane.io/v1beta1
+kind: Usage
+metadata:
+  name: {{ $ist.name }}-delete-{{ $gw.name }}-before-istiod
+  annotations:
+    {{ setResourceNameAnnotation (printf "usage-delete-%s-before-istiod" $gw.name) }}
+spec:
+  replayDeletion: true
+  of:
+    apiVersion: helm.m.crossplane.io/v1beta1
+    kind: Release
+    resourceRef:
+      name: {{ $ist.name }}-istiod
+  by:
+    apiVersion: helm.m.crossplane.io/v1beta1
+    kind: Release
+    resourceRef:
+      name: {{ $ist.name }}-{{ $gw.name }}
+{{- end }}
+
+{{- end }}

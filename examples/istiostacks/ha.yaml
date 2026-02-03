@@ -1,0 +1,60 @@
+apiVersion: stacks.hops.ops.com.ai/v1alpha1
+kind: IstioStack
+metadata:
+  name: istio-ha
+  namespace: example-env
+spec:
+  clusterName: example-cluster
+  labels:
+    team: platform
+    tier: platform
+  namespace: istio-system
+  istiod:
+    values:
+      pilot:
+        autoscaleEnabled: true
+        autoscaleMin: 2
+        autoscaleMax: 5
+        replicaCount: 2
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      podDisruptionBudget:
+        minAvailable: 1
+  gateways:
+  - name: istio-ingressgateway
+    type: LoadBalancer
+    values:
+      autoscaleEnabled: true
+      autoscaleMin: 2
+      autoscaleMax: 6
+      replicaCount: 2
+      podDisruptionBudget:
+        minAvailable: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+  - name: istio-egressgateway
+    type: ClusterIP
+    values:
+      autoscaleEnabled: true
+      autoscaleMin: 2
+      autoscaleMax: 4
+      replicaCount: 2
+      podDisruptionBudget:
+        minAvailable: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi

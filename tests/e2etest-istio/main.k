@@ -1,10 +1,10 @@
 import datetime
 import math
-import models.ai.com.ops.hops.helm.v1alpha1 as helmv1alpha1
+import models.ai.com.ops.hops.stacks.v1alpha1 as stacksv1alpha1
 import models.io.upbound.dev.meta.v1alpha1 as metav1alpha1
 
 # ==============================================================================
-# E2E Test for Istiod XRD (Kubernetes-only)
+# E2E Test for Istio XRD (Kubernetes-only)
 #
 # This test uses the Helm provider with ProviderConfig which uses
 # injected identity (no credentials needed - runs in-cluster).
@@ -12,11 +12,11 @@ import models.io.upbound.dev.meta.v1alpha1 as metav1alpha1
 
 # Generate unique name using timestamp to avoid CI conflicts
 _now = str(int(math.floor(datetime.ticks())))
-_test_name = "e2e-istiod-" + _now
+_test_name = "e2e-istio-" + _now
 
 _items = [
     metav1alpha1.E2ETest {
-        metadata.name = "istiod-helm"
+        metadata.name = "istio-helm"
         spec = {
             crossplane = {
                 autoUpgrade.channel = "Rapid"
@@ -68,11 +68,11 @@ _items = [
             ]
 
             # ==============================================================
-            # manifests: The Istiod XR to test
+            # manifests: The Istio XR to test
             # Resources here ARE deleted during cleanup
             # ==============================================================
             manifests = [
-                helmv1alpha1.Istiod {
+                stacksv1alpha1.IstioStack {
                     metadata = {
                         name = _test_name
                         namespace = "default"
@@ -87,10 +87,12 @@ _items = [
                             name = "default"
                             kind = "ProviderConfig"
                         }
-                        values = {
-                            pilot = {
-                                resources = {
-                                    requests = {cpu = "10m", memory = "64Mi"}
+                        istiod = {
+                            values = {
+                                pilot = {
+                                    resources = {
+                                        requests = {cpu = "10m", memory = "64Mi"}
+                                    }
                                 }
                             }
                         }

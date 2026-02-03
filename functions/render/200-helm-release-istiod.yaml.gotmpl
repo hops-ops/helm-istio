@@ -1,6 +1,6 @@
 # code: language=yaml
 #
-# Helm release for istiod
+# Helm release for istiod (Istio control plane)
 #
 # Integration defaults:
 # - Prometheus metrics enabled for service mesh observability
@@ -8,13 +8,14 @@
 # - Tracing configured for Tempo (OTLP)
 #
 
-{{- $ist := $state.istiod }}
+{{- $ist := $state.istio }}
+{{- $obs := $state.observed }}
 
 ---
 apiVersion: helm.m.crossplane.io/v1beta1
 kind: Release
 metadata:
-  name: {{ $ist.releaseName }}
+  name: {{ $ist.name }}-istiod
   annotations:
     {{ setResourceNameAnnotation "helm-release-istiod" }}
   labels: {{ $ist.labels | toJson }}
@@ -26,9 +27,9 @@ spec:
       repository: https://istio-release.storage.googleapis.com/charts
       version: 1.28.3
     namespace: {{ $ist.namespace }}
-    {{- if $ist.overrideAllValues }}
+    {{- if $ist.istiod.overrideAllValues }}
     values:
-      {{- toYaml $ist.overrideAllValues | nindent 6 }}
+      {{- toYaml $ist.istiod.overrideAllValues | nindent 6 }}
     {{- else }}
     values:
       fullnameOverride: istiod
@@ -51,15 +52,46 @@ spec:
             opentelemetry:
               service: tempo.monitoring
               port: 4317
+        {{- if $ist.egress.allowedHosts }}
+        # Restrict outbound traffic to explicitly allowed hosts
+        outboundTrafficPolicy:
+          mode: REGISTRY_ONLY
+        {{- end }}
       # Pilot metrics
       pilot:
         env:
           PILOT_ENABLE_METADATA_EXCHANGE: "true"
-      {{- if $ist.values }}
-      {{- toYaml $ist.values | nindent 6 }}
+      {{- if $ist.istiod.values }}
+      {{- toYaml $ist.istiod.values | nindent 6 }}
       {{- end }}
     {{- end }}
   rollbackLimit: 3
   providerConfigRef:
     name: {{ $ist.providerConfigRef.name }}
     kind: {{ $ist.providerConfigRef.kind }}
+
+# ==============================================================================
+# Usage: delete istiod before base (deletion protection)
+# Only emit when both resources are observed as ready
+# ==============================================================================
+{{- if and ($obs.base.ready | default false) ($obs.istiod.ready | default false) }}
+---
+apiVersion: protection.crossplane.io/v1beta1
+kind: Usage
+metadata:
+  name: {{ $ist.name }}-delete-istiod-before-base
+  annotations:
+    {{ setResourceNameAnnotation "usage-delete-istiod-before-base" }}
+spec:
+  replayDeletion: true
+  of:
+    apiVersion: helm.m.crossplane.io/v1beta1
+    kind: Release
+    resourceRef:
+      name: {{ $ist.name }}-base
+  by:
+    apiVersion: helm.m.crossplane.io/v1beta1
+    kind: Release
+    resourceRef:
+      name: {{ $ist.name }}-istiod
+{{- end }}

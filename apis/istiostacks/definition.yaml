@@ -1,0 +1,151 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: istiostacks.stacks.hops.ops.com.ai
+spec:
+  group: stacks.hops.ops.com.ai
+  names:
+    kind: IstioStack
+    plural: istiostacks
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    referenceable: true
+    served: true
+    schema:
+      openAPIV3Schema:
+        description: IstioStack installs istio-base, istiod, and gateway Helm charts.
+        type: object
+        properties:
+          spec:
+            description: IstioStackSpec defines the desired state of Istio.
+            type: object
+            properties:
+              clusterName:
+                description: Name of the target cluster. Used as default for provider config names.
+                type: string
+              managementPolicies:
+                description: Management policies for all composed resources. Defaults to ["*"].
+                type: array
+                items:
+                  type: string
+                default:
+                - "*"
+              labels:
+                description: Custom labels applied to all managed resources. Merged with default labels (hops.ops.com.ai/managed, hops.ops.com.ai/istio).
+                type: object
+                additionalProperties:
+                  type: string
+                x-kubernetes-preserve-unknown-fields: true
+              providerConfigRef:
+                description: Reference to the Helm ProviderConfig.
+                type: object
+                properties:
+                  name:
+                    description: Name of the ProviderConfig. Defaults to clusterName.
+                    type: string
+                  kind:
+                    description: Kind of the ProviderConfig. Defaults to ProviderConfig.
+                    type: string
+                    enum:
+                    - ProviderConfig
+                    - ClusterProviderConfig
+              namespace:
+                description: Namespace for all Helm releases. Defaults to istio-system.
+                type: string
+              base:
+                description: Configuration for the istio-base Helm chart.
+                type: object
+                properties:
+                  values:
+                    description: Helm values merged with defaults.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  overrideAllValues:
+                    description: Helm values that replace all defaults.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+              istiod:
+                description: Configuration for the istiod Helm chart.
+                type: object
+                properties:
+                  values:
+                    description: Helm values merged with defaults.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  overrideAllValues:
+                    description: Helm values that replace all defaults.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+              gateways:
+                description: List of Istio gateway instances to install. Defaults to ingress (LoadBalancer) and egress (ClusterIP) gateways.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      description: Gateway name. Defaults to istio-ingressgateway.
+                      type: string
+                    type:
+                      description: Service type for the gateway. Defaults to LoadBalancer.
+                      type: string
+                      enum:
+                      - LoadBalancer
+                      - NodePort
+                      - ClusterIP
+                    ports:
+                      description: Custom port definitions for the gateway service.
+                      type: array
+                      items:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                    values:
+                      description: Helm values merged with defaults for this gateway.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    overrideAllValues:
+                      description: Helm values that replace all defaults for this gateway.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+              egress:
+                description: Egress traffic control. When allowedHosts is set, outbound traffic is restricted to listed hosts only (REGISTRY_ONLY mode). Requires a provider-kubernetes ProviderConfig with the same name as the Helm ProviderConfig.
+                type: object
+                properties:
+                  allowedHosts:
+                    description: External hosts to allow egress to (e.g. "*.googleapis.com", "api.github.com"). Creates a ServiceEntry per host allowing HTTPS on port 443.
+                    type: array
+                    items:
+                      type: string
+            required:
+            - clusterName
+          status:
+            description: IstioStackStatus defines the observed state of Istio.
+            type: object
+            properties:
+              ready:
+                description: Overall readiness of the Istio installation.
+                type: boolean
+              base:
+                description: Status of the istio-base Helm release.
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+              istiod:
+                description: Status of the istiod Helm release.
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+              gateways:
+                description: Status of gateway Helm releases.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    ready:
+                      type: boolean
+        required:
+        - spec

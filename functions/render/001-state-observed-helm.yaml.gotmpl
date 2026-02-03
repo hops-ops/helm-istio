@@ -1,25 +1,48 @@
 # code: language=yaml
 #
-# Extract observed state from the Helm release
+# Extract observed state from all Helm releases (base, istiod, gateways)
 #
 
 {{- $raw := $.observed.resources | default dict }}
-{{- $entry := get $raw "helm-release-istiod" | default dict }}
-{{- $resource := $entry.resource | default dict }}
-{{- $status := $resource.status | default dict }}
-{{- $atProvider := $status.atProvider | default dict }}
+{{- $eff := $state.spec.effective }}
 
-# Check readiness from conditions
-{{- $ready := false }}
-{{- range ($status.conditions | default list) }}
-  {{- if and (eq .type "Ready") (eq .status "True") }}
-    {{- $ready = true }}
+# ==============================================================================
+# Helper: extract readiness from a single observed resource
+# ==============================================================================
+{{- $observeRelease := dict }}
+
+{{- range $key := list "helm-release-base" "helm-release-istiod" }}
+  {{- $entry := get $raw $key | default dict }}
+  {{- $resource := $entry.resource | default dict }}
+  {{- $status := $resource.status | default dict }}
+  {{- $ready := false }}
+  {{- range ($status.conditions | default list) }}
+    {{- if and (eq .type "Ready") (eq .status "True") }}
+      {{- $ready = true }}
+    {{- end }}
   {{- end }}
+  {{- $observeRelease = set $observeRelease $key (dict "ready" $ready) }}
 {{- end }}
 
-# Set observed.helmRelease slice
-{{- $state = set $state "observed" (merge $state.observed (dict "helmRelease" (dict
-  "ready" $ready
-  "state" ($atProvider.state | default "")
-  "revision" ($atProvider.revision | default "")
-))) }}
+# Observe each gateway release
+{{- $gatewayObserved := list }}
+{{- range $gw := $eff.gateways }}
+  {{- $gwKey := printf "helm-release-gateway-%s" $gw.name }}
+  {{- $entry := get $raw $gwKey | default dict }}
+  {{- $resource := $entry.resource | default dict }}
+  {{- $status := $resource.status | default dict }}
+  {{- $ready := false }}
+  {{- range ($status.conditions | default list) }}
+    {{- if and (eq .type "Ready") (eq .status "True") }}
+      {{- $ready = true }}
+    {{- end }}
+  {{- end }}
+  {{- $gatewayObserved = append $gatewayObserved (dict "name" $gw.name "ready" $ready) }}
+{{- end }}
+
+# Set observed state
+{{- $state = set $state "observed" (dict
+  "base" (get $observeRelease "helm-release-base" | default dict)
+  "istiod" (get $observeRelease "helm-release-istiod" | default dict)
+  "gateways" $gatewayObserved
+) }}

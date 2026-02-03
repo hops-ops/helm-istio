@@ -1,26 +1,33 @@
 # code: language=yaml
 #
-# Build $state.istiod with computed values for resource templates
+# Build $state.istio with computed values for all resource templates
 #
 
 {{- $eff := $state.spec.effective }}
 
 # ==============================================================================
-# Core computed state - pass through effective spec values
+# Core computed state - shared across all components
 # ==============================================================================
-{{- $istiod := dict
+{{- $common := dict
   "name" $eff.name
   "clusterName" $eff.clusterName
   "managementPolicies" $eff.managementPolicies
   "labels" $eff.labels
   "providerConfigRef" $eff.providerConfigRef
   "namespace" $eff.namespace
-  "releaseName" $eff.releaseName
-  "values" $eff.values
-  "overrideAllValues" $eff.overrideAllValues
 }}
+
+# ==============================================================================
+# Per-component state
+# ==============================================================================
+{{- $istio := merge $common (dict
+  "base" $eff.base
+  "istiod" $eff.istiod
+  "gateways" $eff.gateways
+  "egress" $eff.egress
+) }}
 
 # ==============================================================================
 # Store computed state
 # ==============================================================================
-{{- $state = set $state "istiod" $istiod }}
+{{- $state = set $state "istio" $istio }}

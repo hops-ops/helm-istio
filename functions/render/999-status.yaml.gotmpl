@@ -10,7 +10,12 @@ apiVersion: {{ $xr.apiVersion }}
 kind: {{ $xr.kind }}
 status:
   ready: {{ $s.ready }}
-  release:
-    name: {{ $s.release.name }}
-    namespace: {{ $s.release.namespace }}
-    ready: {{ $s.release.ready }}
+  base:
+    ready: {{ $s.base.ready }}
+  istiod:
+    ready: {{ $s.istiod.ready }}
+  gateways:
+  {{- range $gw := $s.gateways }}
+  - name: {{ $gw.name }}
+    ready: {{ $gw.ready }}
+  {{- end }}

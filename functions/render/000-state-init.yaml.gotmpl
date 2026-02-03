@@ -13,7 +13,7 @@
 # ==============================================================================
 
 # Core identification
-{{- $name := $metadata.name | default "istiod" }}
+{{- $name := $metadata.name | default "istio" }}
 {{- $clusterName := $spec.clusterName | default $name }}
 {{- $managementPolicies := $spec.managementPolicies | default (list "*") }}
 
@@ -25,7 +25,7 @@
 {{- $labels := merge $defaultLabels ($spec.labels | default dict) }}
 
 # ==============================================================================
-# Helm configuration with defaults
+# Provider and namespace configuration
 # ==============================================================================
 
 # Provider config (defaults to clusterName with ProviderConfig)
@@ -35,9 +35,44 @@
 }}
 
 {{- $namespace := $spec.namespace | default "istio-system" }}
-{{- $releaseName := $spec.name | default $name }}
-{{- $values := $spec.values | default dict }}
-{{- $overrideAllValues := $spec.overrideAllValues | default dict }}
+
+# ==============================================================================
+# Component configurations
+# ==============================================================================
+
+# istio-base
+{{- $baseSpec := $spec.base | default dict }}
+{{- $baseValues := $baseSpec.values | default dict }}
+{{- $baseOverrideAllValues := $baseSpec.overrideAllValues | default dict }}
+
+# istiod
+{{- $istiodSpec := $spec.istiod | default dict }}
+{{- $istiodValues := $istiodSpec.values | default dict }}
+{{- $istiodOverrideAllValues := $istiodSpec.overrideAllValues | default dict }}
+
+# gateways - default to ingress + egress if omitted
+{{- $rawGateways := $spec.gateways | default list }}
+{{- $gateways := list }}
+{{- if not $rawGateways }}
+  {{- $gateways = list
+    (dict "name" "istio-ingressgateway" "type" "LoadBalancer")
+    (dict "name" "istio-egressgateway" "type" "ClusterIP")
+  }}
+{{- else }}
+  {{- range $gw := $rawGateways }}
+    {{- $gateways = append $gateways (dict
+      "name" ($gw.name | default "istio-ingressgateway")
+      "type" ($gw.type | default "LoadBalancer")
+      "ports" ($gw.ports | default list)
+      "values" ($gw.values | default dict)
+      "overrideAllValues" ($gw.overrideAllValues | default dict)
+    ) }}
+  {{- end }}
+{{- end }}
+
+# egress
+{{- $egressSpec := $spec.egress | default dict }}
+{{- $allowedHosts := $egressSpec.allowedHosts | default list }}
 
 # ==============================================================================
 # Initialize $state namespace
@@ -52,11 +87,20 @@
       "labels" $labels
       "providerConfigRef" $providerConfigRef
       "namespace" $namespace
-      "releaseName" $releaseName
-      "values" $values
-      "overrideAllValues" $overrideAllValues
+      "base" (dict
+        "values" $baseValues
+        "overrideAllValues" $baseOverrideAllValues
+      )
+      "istiod" (dict
+        "values" $istiodValues
+        "overrideAllValues" $istiodOverrideAllValues
+      )
+      "gateways" $gateways
+      "egress" (dict
+        "allowedHosts" $allowedHosts
+      )
     )
   )
   "observed" (dict)
-  "istiod" (dict)
+  "istio" (dict)
 }}
